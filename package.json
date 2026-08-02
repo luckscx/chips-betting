@@ -1,0 +1,13 @@
+{
+  "name": "chips-betting",
+  "version": "1.0.0",
+  "description": "多人实时筹码下注 H5 - WebSocket",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "ws": "^8.18.0"
+  }
+}

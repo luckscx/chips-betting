@@ -57,23 +57,23 @@ body {
   text-shadow: 0 2px 8px rgba(240,185,11,0.4); line-height: 1.1;
 }
 .pot-chips {
-  display: flex; justify-content: center; gap: 14px; margin-top: 10px;
-  height: 50px; align-items: flex-end; perspective: 200px;
+  display: flex; justify-content: center; gap: 12px; margin-top: 10px; margin-bottom: 8px;
+  height: 82px; align-items: flex-end; perspective: 200px;
 }
-.chip-stack { position: relative; width: 34px; height: 36px; }
+.chip-stack { position: relative; width: 34px; height: 74px; }
 .chip-stack .chip {
   position: absolute; left: 2px;
   width: 30px; height: 14px;
   border-radius: 50% / 40%;
-  border-top: 2px solid rgba(255,255,255,0.5);
+  border-top: 2px solid rgba(255,255,255,0.4);
   box-shadow: 0 1px 1px rgba(0,0,0,0.35);
   animation: drop 0.25s ease;
 }
-.chip-stack .chip:nth-child(1) { bottom: 0; z-index: 3; }
-.chip-stack .chip:nth-child(2) { bottom: 5px; z-index: 4; }
-.chip-stack .chip:nth-child(3) { bottom: 10px; z-index: 5; }
-.chip-stack .chip:nth-child(4) { bottom: 15px; z-index: 6; }
-.chip-stack .chip:nth-child(5) { bottom: 20px; z-index: 7; }
+.chip-stack .denom {
+  position: absolute; bottom: -16px; left: 0; right: 0;
+  text-align: center; font-size: 10px; font-weight: 700;
+  opacity: 0.7; letter-spacing: 1px;
+}
 @keyframes drop { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
 /* ───── 牌桌玩家下注标签 ───── */
@@ -382,8 +382,13 @@ let reconnectAttempts = 0, reconnectTimer = null, manuallyClosed = false;
 // ─── 头像 ───
 const AVATAR_COLORS = ['#e74c3c','#e67e22','#f39c12','#f1c40f','#2ecc71','#27ae60','#1abc9c','#16a085','#3498db','#2980b9','#9b59b6','#8e44ad','#e84393','#fd79a8','#00b894','#00cec9','#0984e3','#74b9ff','#a29bfe','#fab1a0','#ff7675','#636e72'];
 const AVATAR_FONTS = ['🎮','🎲','🎯','🏆','⭐','💎','🔥','👑','🎩','🃏','🎪',' SLOT'];
-// 三种筹码颜色：白=小面额，红=中面额，蓝=大面额
-const CHIP_COLORS = ['#f5f5f5', '#e74c3c', '#3498db'];
+// 四色筹码：个=白, 十=红, 百=蓝, 千=紫
+const CHIP_COLORS = [
+  { top: '#ecf0f1', side: '#95a5a6', label: '个' },
+  { top: '#e74c3c', side: '#c0392b', label: '十' },
+  { top: '#3498db', side: '#2471a3', label: '百' },
+  { top: '#9b59b6', side: '#7d3c98', label: '千' },
+];
 
 function avatarFor(seed) {
   let h = 0;
@@ -537,28 +542,26 @@ function updatePot() {
   document.getElementById('my-pot-bet').textContent = myPotBet;
   document.getElementById('online-count').textContent = players.filter(p => p.online).length;
 
-  // 底池筹码视觉——最多3堆立体堆叠
+  // 底池筹码视觉——按个十百千分堆，每堆芯片数=该位数字
   const chipsEl = document.getElementById('pot-chips');
   if (potTotal === 0) {
     chipsEl.innerHTML = '';
   } else {
-    // 总额越大堆越高，最多3堆、每堆最多5枚
-    const stackCount = Math.min(3, Math.max(1, Math.ceil(potTotal / 50)));
-    const totalChips = Math.min(stackCount * 5, Math.max(stackCount, Math.ceil(potTotal / 20)));
-    const chipsPerStack = Math.ceil(totalChips / stackCount);
-    // 每堆一种颜色：堆1=白(小), 堆2=红(中), 堆3=蓝(大)
+    // 分解为个十百千四位
+    const digits = [];
+    let v = potTotal;
+    for (let i = 0; i < 4; i++) { digits.push(v % 10); v = Math.floor(v / 10); }
+    // digits[0]=个, [1]=十, [2]=百, [3]=千；从高位→低位渲染（左到右）
     let html = '';
-    for (let s = 0; s < stackCount; s++) {
-      const count = Math.min(chipsPerStack, totalChips - s * chipsPerStack);
-      const c = CHIP_COLORS[s % 3];
-      html += `<div class="chip-stack" data-color="${s}">`;
+    for (let s = 3; s >= 0; s--) {
+      const count = digits[s];
+      if (count === 0) continue;
+      const c = CHIP_COLORS[s];
+      html += `<div class="chip-stack">`;
       for (let i = 0; i < count; i++) {
-        // 圆柱形：底色为面额色，顶面亮，底部暗
-        const isLight = c === '#f5f5f5';
-        const top = isLight ? '#ffffff' : c;
-        const side = isLight ? '#d0d0d0' : shadeColor(c, -30);
-        html += `<div class="chip" style="background:linear-gradient(to bottom, ${top} 30%, ${side} 70%);border-color:${side}"></div>`;
+        html += `<div class="chip" style="bottom:${14 + i * 5}px;z-index:${3 + i};background:linear-gradient(to bottom, ${c.top} 30%, ${c.side} 70%);border-color:${c.side};animation-delay:${i * 0.04}s"></div>`;
       }
+      html += `<div class="denom" style="color:${c.top}">${c.label}</div>`;
       html += '</div>';
     }
     chipsEl.innerHTML = html;

@@ -1,5 +1,7 @@
 # 🃏 德州筹码 (Chips Betting)
 
+<img src="logo.png" width="128" height="128" alt="德州筹码 Logo" align="right">
+
 多人实时德州扑克筹码下注 H5 应用 —— 基于 WebSocket 的实时多人筹码对赌系统。
 
 ## ✨ 功能特性

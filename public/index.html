@@ -22,6 +22,7 @@ body {
   border-bottom: 1px solid #2a4a3a;
 }
 .topbar-left { display: flex; align-items: center; gap: 10px; }
+.topbar-right { flex-shrink: 0; }
 .avatar-wrap { width: 40px; height: 40px; flex-shrink: 0; }
 .avatar {
   width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center;
@@ -232,6 +233,16 @@ body {
 .modal-btn { flex: 1; padding: 12px 0; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; }
 .modal-cancel { background: #3a5a4a; color: var(--text); }
 .modal-ok { background: var(--accent); color: #111; }
+.modal-ok-danger { background: var(--danger); color: #fff; }
+
+/* ───── 重置对局按钮 ───── */
+.reset-btn {
+  background: transparent; border: 1px solid #3a5a4a; color: var(--sub);
+  padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 600;
+  cursor: pointer; white-space: nowrap; transition: all 0.2s;
+}
+.reset-btn:active { transform: scale(0.95); }
+.modal-desc { font-size: 13px; color: var(--sub); text-align: center; margin-bottom: 14px; line-height: 1.5; }
 
 /* ───── 收池弹窗 ───── */
 .winpot-overlay {
@@ -292,6 +303,21 @@ body {
         <span>总输赢 <span class="winloss-val" id="my-winloss">0</span></span>
         <div class="conn-dot conn-ok" id="conn-dot"></div>
       </div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <button class="reset-btn" onclick="openResetModal()">↻ 重置对局</button>
+  </div>
+</div>
+
+<!-- 重置确认弹窗 -->
+<div class="modal-overlay" id="reset-modal">
+  <div class="modal-box">
+    <div class="modal-title">↻ 重置对局</div>
+    <div class="modal-desc">确定要重置吗？<br>所有玩家的筹码将恢复为 <strong style="color:var(--accent)">1000</strong>，<br>底池清零、历史记录清空。<br>此操作不可撤销。</div>
+    <div class="modal-actions">
+      <button class="modal-btn modal-cancel" onclick="closeResetModal()">取消</button>
+      <button class="modal-btn modal-ok-danger" onclick="confirmReset()">确认重置</button>
     </div>
   </div>
 </div>
@@ -504,6 +530,19 @@ function handleMessage(msg) {
       updateAll();
       break;
 
+    case 'gameReset':
+      myBalance = 1000;
+      myWinLoss = 0;
+      myPotBet = 0;
+      myFolded = false;
+      potTotal = 0;
+      for (const p of players) {
+        p.balance = 1000; p.totalWinLoss = 0; p.potBet = 0; p.folded = false;
+      }
+      updateAll();
+      showToast('🔄 对局已重置，所有筹码恢复为 1000');
+      break;
+
     case 'playerLeft':
       players = players.filter(p => p.id !== msg.playerId);
       updateAll(); break;
@@ -697,6 +736,19 @@ function foldHand() { send({ type: 'fold' }); }
 function winPot() {
   if (potTotal === 0) return;
   send({ type: 'winPot' });
+}
+
+// ─── 重置对局 ───
+function openResetModal() {
+  document.getElementById('reset-modal').classList.add('show');
+}
+function closeResetModal() {
+  document.getElementById('reset-modal').classList.remove('show');
+}
+function confirmReset() {
+  closeResetModal();
+  send({ type: 'resetGame' });
+  showToast('对局已重置');
 }
 
 // ─── 改名 ───

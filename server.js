@@ -380,6 +380,25 @@ wss.on('connection', (ws) => {
         saveState();
         break;
       }
+
+      // ── 重置对局：所有玩家回到初始筹码 ──
+      case 'resetGame': {
+        if (!player) return;
+        potTotal = 0;
+        potHistory = [];
+        for (const p of playerRegistry.values()) {
+          p.balance = STARTING_BALANCE;
+          p.totalWinLoss = 0;
+          p.potBet = 0;
+          p.folded = false;
+        }
+        const resetMsg = { type: 'gameReset' };
+        broadcast(resetMsg);
+        broadcast(roomState());
+        saveState();
+        console.log(`[${new Date().toISOString()}] ${player.name} 重置了对局`);
+        break;
+      }
     }
   });
 
